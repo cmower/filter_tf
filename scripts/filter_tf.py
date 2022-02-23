@@ -62,7 +62,7 @@ class TfFilter():
         
         rospy.init_node(args.name)
 
-        self.min_observation_count = args.min_observation_count
+        self.min_observation_count = int(args.min_observation_count)
 
         # ex Table1
         self.observed_child_frame = args.child_frame
@@ -100,10 +100,8 @@ class TfFilter():
                 self.parent_frame, self.observed_child_frame,  rospy.Time(0))
             if self.observation_count < self.min_observation_count:
                 self.observation_count += 1
-        except (tf.LookupException, tf.ConnectivityException,
-                tf.ExtrapolationException, tf.Exception), e:
-            rospy.logerr("Failed to lookup transform for %s to %s" %
-                         (self.parent_frame, self.observed_child_frame))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logerr("Failed to lookup transform for %s to %s" % (self.parent_frame, self.observed_child_frame))
 
         return raw_translation, raw_rotation
 
