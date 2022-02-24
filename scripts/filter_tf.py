@@ -2,84 +2,52 @@
 import rospy
 import tf2_ros
 import numpy as np
-import argparse
 import sys
 import tf_conversions
 from geometry_msgs.msg import TransformStamped
 
+"""Provide a filtered version of a desired transform. Ex. we have raw
+observations of Table1 frame in the camera frame of reference, this
+node will produce a transform from camera_frame to Table1_filtered."""
+
 class TfFilter():
+
     def __init__(self):
 
-        parser = argparse.ArgumentParser(
-            description=
-            """Provide a filtered version of a desired transform. Ex. we have raw
-            observations of Table1 frame in the camera frame of reference,
-            this node will produce a transform from
-            camera_frame to Table1_filtered.""")
+        ########################################
+        ## Initialize ROS node
 
-        parser.add_argument(
-            'child_frame',
-            metavar='child_frame',
-            type=str,
-            help="""This is the raw child frame we are observing.
-            Ex: Table1,
-            raw observations of transform from camera to table frame""")
+        rospy.init_node("filter_tf_node")
 
-        parser.add_argument(
-            'parent_frame',
-            metavar='parent_frame',
-            type=str,
-            help="""This is the parent frame
-            for the transform that we want to filter.""")
+        ########################################
+        ## Get ROS parameters
 
-        parser.add_argument(
-            '--destination_frame',
-            metavar='destination_frame',
-            type=str,
-            help="""This is the name of the frame we will publish""",
-            default=""
-        )
+        # The number of required observations before we begin
+        # filtering the transform.
+        self.min_observation_count = rospy.get_param('~min_observation_count', 10)
+        # This is the raw child frame we are observing. Ex: Table1,
+        # raw observations of transform from camera to table frame
+        self.observed_child_frame = rospy.get_param('~child_frame')
+        # This is the name of the frame we will publish
+        self.filtered_child_frame = rospy.get_param('~destination_frame', self.observed_child_frame+'_filtered')
+        # This is the parent frame for the transform that we want to
+        # filter.
+        self.parent_frame = rospy.get_param('~parent_frame', 'world')
+        # The fraction used in filtering the rotation.
+        self.fraction_rotation = rospy.get_param('~fraction_rotation', 0.01)
+        # The fraction used in filtering the translation.
+        self.fraction_translation = rospy.get_param('~fraction_translation', 0.01)
+        # This is the sampling frequency of the destination frame
+        hz = rospy.get_param('~hz', 10)
 
-        parser.add_argument(
-            'min_observation_count',
-            metavar='min_observation_count',
-            type=str,
-            help="""The number of required observations before
-            we begin filtering the transform.""")
-
-        parser.add_argument(
-            '--name',
-            type=str,
-            default="pc_filter",
-            help="""This is the ros node name""")
-
-        # old args: /abc /xyz __name:=node_name __log:=my_logfile.log]
-        # new args: /abc /xyz --name node_name --log my_logfile.log]
-        args_list = " ".join(sys.argv[1:]).replace("__", "--").replace(
-            ":=", " ").split(" ")
-
-        args, _ = parser.parse_known_args(args_list)
-        
-        rospy.init_node(args.name)
-
-        self.min_observation_count = int(args.min_observation_count)
-
-        # ex Table1
-        self.observed_child_frame = args.child_frame
-        # ex Table1_filtered
-
-        if args.destination_frame != "":
-            self.filtered_child_frame = args.destination_frame
-        else:
-            self.filtered_child_frame = args.child_frame + "_filtered"
-
-        # kinect2_rgb_optical_frame (frame in which Table1 was observed from)
-        self.parent_frame = args.parent_frame
-
-
+        ########################################
+        ## Setup tf2
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.tf_buffer = tf2_ros.Buffer()
         tf2_ros.TransformListener(self.tf_buffer)
+
+        ########################################
+        ## Setup final variables
 
         # This is a moving average of the translational component
         # of the transform we are filtering
@@ -88,11 +56,9 @@ class TfFilter():
         # of the transform we are filtering
         self.filtered_rot = None
         # This is the rate that our tranform will be published at
-        self.rate = rospy.Rate(10.0)
+        self.rate = rospy.Rate(hz)
         # number of times the raw transform has been observed
         self.observation_count = 0
-       
-       
 
     def _observe_raw_tf(self):
         raw_translation = None
@@ -119,8 +85,8 @@ class TfFilter():
         # Actual filtering of the transformation
         # between the observed and published transform
         self.filtered_rot = tf_conversions.transformations.quaternion_slerp(
-            self.filtered_rot, raw_rotation, 0.01)
-        self.filtered_trans = .99 * self.filtered_trans + 0.01 * np.array(
+            self.filtered_rot, raw_rotation, self.fraction_rotation)
+        self.filtered_trans = (1.0-self.fraction_translation) * self.filtered_trans + self.fraction_translation * np.array(
             raw_translation)
 
     def _broadcast_filtered_tf(self):
