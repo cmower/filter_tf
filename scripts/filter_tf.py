@@ -2,7 +2,6 @@
 import rospy
 import tf2_ros
 import numpy as np
-import sys
 import tf_conversions
 from geometry_msgs.msg import TransformStamped
 
