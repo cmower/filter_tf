@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-
 import rospy
-import tf
+import tf2_ros
 import numpy as np
 import argparse
 import sys
-
+import tf_conversions
+from geometry_msgs.msg import TransformStamped
 
 class TfFilter():
     def __init__(self):
@@ -76,8 +76,10 @@ class TfFilter():
         # kinect2_rgb_optical_frame (frame in which Table1 was observed from)
         self.parent_frame = args.parent_frame
 
-        self.tf_listener = tf.TransformListener()
-        self.tf_broadcaster = tf.TransformBroadcaster()
+
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.tf_buffer = tf2_ros.Buffer()
+        tf2_ros.TransformListener(self.tf_buffer)
 
         # This is a moving average of the translational component
         # of the transform we are filtering
@@ -96,8 +98,9 @@ class TfFilter():
         raw_translation = None
         raw_rotation = None
         try:
-            (raw_translation, raw_rotation) = self.tf_listener.lookupTransform(
-                self.parent_frame, self.observed_child_frame,  rospy.Time(0))
+            msg = self.tf_buffer.lookup_transform(self.parent_frame, self.observed_child_frame, rospy.Time())
+            raw_translation = [getattr(msg.transform.translation, d) for d in 'xyz']
+            raw_rotation = [getattr(msg.transform.rotation, d) for d in 'xyzw']
             if self.observation_count < self.min_observation_count:
                 self.observation_count += 1
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
@@ -115,7 +118,7 @@ class TfFilter():
 
         # Actual filtering of the transformation
         # between the observed and published transform
-        self.filtered_rot = tf.transformations.quaternion_slerp(
+        self.filtered_rot = tf_conversions.transformations.quaternion_slerp(
             self.filtered_rot, raw_rotation, 0.01)
         self.filtered_trans = .99 * self.filtered_trans + 0.01 * np.array(
             raw_translation)
@@ -124,9 +127,18 @@ class TfFilter():
         if self.filtered_trans is None or self.filtered_rot is None:
             return
 
-        self.tf_broadcaster.sendTransform(
-            self.filtered_trans, self.filtered_rot,
-            rospy.Time.now(), self.filtered_child_frame, self.parent_frame)
+        msg = TransformStamped()
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = self.parent_frame
+        msg.child_frame_id = self.filtered_child_frame
+        msg.transform.translation.x = self.filtered_trans[0]
+        msg.transform.translation.y = self.filtered_trans[1]
+        msg.transform.translation.z = self.filtered_trans[2]
+        msg.transform.rotation.x = self.filtered_rot[0]
+        msg.transform.rotation.y = self.filtered_rot[1]
+        msg.transform.rotation.z = self.filtered_rot[2]
+        msg.transform.rotation.w = self.filtered_rot[3]
+        self.tf_broadcaster.sendTransform(msg)
 
     def run(self):
         rospy.loginfo("Starting publish of transform")
