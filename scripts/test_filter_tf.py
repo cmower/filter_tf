@@ -14,10 +14,16 @@ def eps(n, lo, hi):
         return eps
 
 def pos():
-    return np.ones(3) + eps(3, -0.0075, 0.0075)
+    p = np.ones(3) + eps(3, -0.005, 0.005)
+    t = rospy.Time.now().to_sec()
+    p1_offset = np.sin(t * 2.0 * np.pi * 0.5) * 0.1
+    p2_offset = np.sin(t * np.pi * 0.5) * 0.2
+    p[1] += p1_offset
+    p[2] += p2_offset
+    return p
 
 def quat():
-    q = np.array([0, 0, 0, 1]) + eps(4, -0.0085, 0.0085)
+    q = np.array([0, 0, 0, 1]) + eps(4, -0.005, 0.005)
     q /= np.linalg.norm(q)
     return q
 
