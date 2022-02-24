@@ -8,8 +8,6 @@ Panels:
         - /Status1
         - /TF1
         - /TF1/Frames1
-        - /TF1/Frames1/test_tf1
-        - /TF1/Frames1/test_tf_filtered1
       Splitter Ratio: 0.5
     Tree Height: 1079
   - Class: rviz/Selection
@@ -62,7 +60,7 @@ Visualization Manager:
       Frames:
         All Enabled: false
         test_tf:
-          Value: false
+          Value: true
         test_tf_filtered:
           Value: true
         world:
@@ -125,9 +123,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.38039836287498474
+      Pitch: 0.4203983247280121
       Target Frame: <Fixed Frame>
-      Yaw: 1.340397596359253
+      Yaw: 0.41539818048477173
     Saved: ~
 Window Geometry:
   Displays:
