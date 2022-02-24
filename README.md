@@ -34,7 +34,7 @@ Simple Utility Node to filter a specified ROS TF transform
 
   This is the sampling frequency of the destination frame.
 
-## Usage:
+## Usage
 
 From command line:
 ```
