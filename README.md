@@ -34,15 +34,6 @@ Simple Utility Node to filter a specified ROS TF transform
 
   This is the sampling frequency of the destination frame.
 
-
-## Args
-
-child_frame: raw observation of a reference frame ex: /ar_marker_8
-
-parent_frame: frame in which the observation occurs. ex: /kinect2_link
-
-This node will then publish a tf from parent_frame to child_frame_filtered. ex: /ar_marker_8_filtered
-
 ## Usage:
 
 From command line:
@@ -57,3 +48,7 @@ In launch file:
 ```
 
 This will now broadcast a transform from `world` to `CHILD_FRAME_ID_filtered`. This transform will continue to broadcast even if the raw transform becomes occluded.  This transform will be updated via a moving average whenever a new observation of the raw transform occurs.
+
+## Test
+
+Launch the test scripts using `roslaunch filter_tf test.launch`.
