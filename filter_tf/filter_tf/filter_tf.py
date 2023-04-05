@@ -17,6 +17,7 @@ import numpy as np
 
 _EPS = numpy.finfo(float).eps * 4.0
 
+
 def unit_vector(data, axis=None, out=None):
     """Return ndarray normalized by length, i.e. eucledian norm, along axis.
     >>> v0 = numpy.random.random(3)
@@ -40,6 +41,34 @@ def unit_vector(data, axis=None, out=None):
     []
     >>> list(unit_vector([1.0]))
     [1.0]
+
+    Copyright (c) 2006, Christoph Gohlke
+    Copyright (c) 2006-2009, The Regents of the University of California
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+    * Neither the name of the copyright holders nor the names of any
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
     """
     if out is None:
         data = numpy.array(data, dtype=numpy.float64, copy=True)
@@ -50,13 +79,14 @@ def unit_vector(data, axis=None, out=None):
         if out is not data:
             out[:] = numpy.array(data, copy=False)
         data = out
-    length = numpy.atleast_1d(numpy.sum(data*data, axis))
+    length = numpy.atleast_1d(numpy.sum(data * data, axis))
     numpy.sqrt(length, length)
     if axis is not None:
         length = numpy.expand_dims(length, axis)
     data /= length
     if out is None:
         return data
+
 
 def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
     """Return spherical linear interpolation between two quaternions.
@@ -73,6 +103,34 @@ def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
     >>> numpy.allclose(2.0, math.acos(numpy.dot(q0, q1)) / angle) or \
         numpy.allclose(2.0, math.acos(-numpy.dot(q0, q1)) / angle)
     True
+
+    Copyright (c) 2006, Christoph Gohlke
+    Copyright (c) 2006-2009, The Regents of the University of California
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+    * Neither the name of the copyright holders nor the names of any
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
     """
     q0 = unit_vector(quat0[:4])
     q1 = unit_vector(quat1[:4])
@@ -98,9 +156,7 @@ def quaternion_slerp(quat0, quat1, fraction, spin=0, shortestpath=True):
 
 
 class FilterTf(Node):
-
     def __init__(self):
-
         ########################################
         ## Initialize ROS node
 
@@ -111,34 +167,40 @@ class FilterTf(Node):
 
         # The number of required observations before we begin
         # filtering the transform.
-        self.declare_parameter('min_observation_count', 10)
-        self.min_observation_count = int(self.get_parameter('min_observation_count').value)
+        self.declare_parameter("min_observation_count", 10)
+        self.min_observation_count = int(
+            self.get_parameter("min_observation_count").value
+        )
         # This is the raw child frame we are observing. Ex: Table1,
         # raw observations of transform from camera to table frame
-        self.declare_parameter('child_frame')
-        self.observed_child_frame = str(self.get_parameter('child_frame').value)
+        self.declare_parameter("child_frame")
+        self.observed_child_frame = str(self.get_parameter("child_frame").value)
         # This is the name of the frame we will publish
-        self.declare_parameter('destination_frame', self.observed_child_frame+'_filtered')
-        self.filtered_child_frame = str(self.get_parameter('destination_frame').value)
+        self.declare_parameter(
+            "destination_frame", self.observed_child_frame + "_filtered"
+        )
+        self.filtered_child_frame = str(self.get_parameter("destination_frame").value)
         # This is the parent frame for the transform that we want to
         # filter.
-        self.declare_parameter('parent_frame', 'world')
-        self.parent_frame = str(self.get_parameter('parent_frame').value)
+        self.declare_parameter("parent_frame", "world")
+        self.parent_frame = str(self.get_parameter("parent_frame").value)
         # The fraction used in filtering the rotation.
-        self.declare_parameter('fraction_rotation', 0.01)
-        self.fraction_rotation = float(self.get_parameter('fraction_rotation').value)
+        self.declare_parameter("fraction_rotation", 0.01)
+        self.fraction_rotation = float(self.get_parameter("fraction_rotation").value)
         # The fraction used in filtering the translation.
-        self.declare_parameter('fraction_translation', 0.01)
-        self.fraction_translation = float(self.get_parameter('fraction_translation').value)
+        self.declare_parameter("fraction_translation", 0.01)
+        self.fraction_translation = float(
+            self.get_parameter("fraction_translation").value
+        )
         # This is the sampling frequency of the destination frame
-        self.declare_parameter('hz', 10)
-        hz = int(self.get_parameter('hz').value)
+        self.declare_parameter("hz", 10)
+        hz = int(self.get_parameter("hz").value)
 
         ########################################
         ## Setup tf2
         self.tf_broadcaster = TransformBroadcaster(self)
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)        
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         ########################################
         ## Setup final variables
@@ -154,8 +216,8 @@ class FilterTf(Node):
 
         ########################################
         ## Start timer
-        self.get_logger().info("Starting publish of transform")        
-        dt = 1./float(hz)
+        self.get_logger().info("Starting publish of transform")
+        dt = 1.0 / float(hz)
         self.create_timer(dt, self.run)
 
     def _observe_raw_tf(self):
@@ -168,29 +230,40 @@ class FilterTf(Node):
                 self.observed_child_frame,
                 rclpy.time.Time(),
             )
-            raw_translation = [getattr(msg.transform.translation, d) for d in 'xyz']
-            raw_rotation = [getattr(msg.transform.rotation, d) for d in 'xyzw']
+            raw_translation = [getattr(msg.transform.translation, d) for d in "xyz"]
+            raw_rotation = [getattr(msg.transform.rotation, d) for d in "xyzw"]
             if self.observation_count < self.min_observation_count:
-                self.observation_count += 1            
+                self.observation_count += 1
         except TransformException as err:
-            self.get_logger().error("Failed to lookup transform for %s to %s" % (self.parent_frame, self.observed_child_frame))
+            self.get_logger().error(
+                "Failed to lookup transform for %s to %s"
+                % (self.parent_frame, self.observed_child_frame)
+            )
 
         return raw_translation, raw_rotation
 
     def _update_filtered_tf(self, raw_translation, raw_rotation):
         # If this is the first time we have received a valid
         # transformation, define filtered_rot + filtered_trans
-        if self.filtered_rot is None or self.observation_count < 20:
+        if (
+            self.filtered_rot is None
+            or self.observation_count < self.min_observation_count
+        ):
             self.filtered_rot = raw_rotation
-        if self.filtered_trans is None or self.observation_count < 20:
+        if (
+            self.filtered_trans is None
+            or self.observation_count < self.min_observation_count
+        ):
             self.filtered_trans = np.array(raw_translation)
 
         # Actual filtering of the transformation
         # between the observed and published transform
         self.filtered_rot = quaternion_slerp(
-            self.filtered_rot, raw_rotation, self.fraction_rotation)
-        self.filtered_trans = (1.0-self.fraction_translation) * self.filtered_trans + self.fraction_translation * np.array(
-            raw_translation)
+            self.filtered_rot, raw_rotation, self.fraction_rotation
+        )
+        self.filtered_trans = (
+            1.0 - self.fraction_translation
+        ) * self.filtered_trans + self.fraction_translation * np.array(raw_translation)
 
     def _broadcast_filtered_tf(self):
         if self.filtered_trans is None or self.filtered_rot is None:
@@ -210,7 +283,6 @@ class FilterTf(Node):
         self.tf_broadcaster.sendTransform(msg)
 
     def run(self):
-        
         # get a new observation of the raw transform if available
         # returns None, None if tf timeout
         raw_translation, raw_rotation = self._observe_raw_tf()
@@ -224,7 +296,6 @@ class FilterTf(Node):
 
 
 def main(args=None):
-
     # Start node, and spin
     rclpy.init(args=args)
     node = FilterTf()
@@ -236,8 +307,8 @@ def main(args=None):
     finally:
         # Clean up and shutdown
         node.destroy_node()
-        rclpy.shutdown()    
+        rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
