@@ -1,7 +1,0 @@
-<launch>
-  <node pkg="filter_tf" name="filter" type="filter_tf.py">
-    <param name="child_frame" type="string" value="test_tf"/>
-  </node>
-  <node pkg="filter_tf"  name="test" type="test_filter_tf.py"/>
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find filter_tf)/rviz/rviz.rviz" />
-</launch>
