@@ -76,9 +76,9 @@ class TfFilter():
     def _update_filtered_tf(self, raw_translation, raw_rotation):
         # If this is the first time we have received a valid
         # transformation, define filtered_rot + filtered_trans
-        if self.filtered_rot is None or self.observation_count < 20:
+        if self.filtered_rot is None or self.observation_count < self.min_observation_count:
             self.filtered_rot = raw_rotation
-        if self.filtered_trans is None or self.observation_count < 20:
+        if self.filtered_trans is None or self.observation_count < self.min_observation_count:
             self.filtered_trans = np.array(raw_translation)
 
         # Actual filtering of the transformation
