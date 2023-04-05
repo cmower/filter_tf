@@ -9,10 +9,9 @@ from geometry_msgs.msg import TransformStamped
 observations of Table1 frame in the camera frame of reference, this
 node will produce a transform from camera_frame to Table1_filtered."""
 
-class TfFilter():
 
+class TfFilter:
     def __init__(self):
-
         ########################################
         ## Initialize ROS node
 
@@ -23,21 +22,23 @@ class TfFilter():
 
         # The number of required observations before we begin
         # filtering the transform.
-        self.min_observation_count = rospy.get_param('~min_observation_count', 10)
+        self.min_observation_count = rospy.get_param("~min_observation_count", 10)
         # This is the raw child frame we are observing. Ex: Table1,
         # raw observations of transform from camera to table frame
-        self.observed_child_frame = rospy.get_param('~child_frame')
+        self.observed_child_frame = rospy.get_param("~child_frame")
         # This is the name of the frame we will publish
-        self.filtered_child_frame = rospy.get_param('~destination_frame', self.observed_child_frame+'_filtered')
+        self.filtered_child_frame = rospy.get_param(
+            "~destination_frame", self.observed_child_frame + "_filtered"
+        )
         # This is the parent frame for the transform that we want to
         # filter.
-        self.parent_frame = rospy.get_param('~parent_frame', 'world')
+        self.parent_frame = rospy.get_param("~parent_frame", "world")
         # The fraction used in filtering the rotation.
-        self.fraction_rotation = rospy.get_param('~fraction_rotation', 0.01)
+        self.fraction_rotation = rospy.get_param("~fraction_rotation", 0.01)
         # The fraction used in filtering the translation.
-        self.fraction_translation = rospy.get_param('~fraction_translation', 0.01)
+        self.fraction_translation = rospy.get_param("~fraction_translation", 0.01)
         # This is the sampling frequency of the destination frame
-        hz = rospy.get_param('~hz', 10)
+        hz = rospy.get_param("~hz", 10)
 
         ########################################
         ## Setup tf2
@@ -63,30 +64,47 @@ class TfFilter():
         raw_translation = None
         raw_rotation = None
         try:
-            msg = self.tf_buffer.lookup_transform(self.parent_frame, self.observed_child_frame, rospy.Time())
-            raw_translation = [getattr(msg.transform.translation, d) for d in 'xyz']
-            raw_rotation = [getattr(msg.transform.rotation, d) for d in 'xyzw']
+            msg = self.tf_buffer.lookup_transform(
+                self.parent_frame, self.observed_child_frame, rospy.Time()
+            )
+            raw_translation = [getattr(msg.transform.translation, d) for d in "xyz"]
+            raw_rotation = [getattr(msg.transform.rotation, d) for d in "xyzw"]
             if self.observation_count < self.min_observation_count:
                 self.observation_count += 1
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            rospy.logerr("Failed to lookup transform for %s to %s" % (self.parent_frame, self.observed_child_frame))
+        except (
+            tf2_ros.LookupException,
+            tf2_ros.ConnectivityException,
+            tf2_ros.ExtrapolationException,
+        ):
+            rospy.logerr(
+                "Failed to lookup transform for %s to %s"
+                % (self.parent_frame, self.observed_child_frame)
+            )
 
         return raw_translation, raw_rotation
 
     def _update_filtered_tf(self, raw_translation, raw_rotation):
         # If this is the first time we have received a valid
         # transformation, define filtered_rot + filtered_trans
-        if self.filtered_rot is None or self.observation_count < self.min_observation_count:
+        if (
+            self.filtered_rot is None
+            or self.observation_count < self.min_observation_count
+        ):
             self.filtered_rot = raw_rotation
-        if self.filtered_trans is None or self.observation_count < self.min_observation_count:
+        if (
+            self.filtered_trans is None
+            or self.observation_count < self.min_observation_count
+        ):
             self.filtered_trans = np.array(raw_translation)
 
         # Actual filtering of the transformation
         # between the observed and published transform
         self.filtered_rot = tf_conversions.transformations.quaternion_slerp(
-            self.filtered_rot, raw_rotation, self.fraction_rotation)
-        self.filtered_trans = (1.0-self.fraction_translation) * self.filtered_trans + self.fraction_translation * np.array(
-            raw_translation)
+            self.filtered_rot, raw_rotation, self.fraction_rotation
+        )
+        self.filtered_trans = (
+            1.0 - self.fraction_translation
+        ) * self.filtered_trans + self.fraction_translation * np.array(raw_translation)
 
     def _broadcast_filtered_tf(self):
         if self.filtered_trans is None or self.filtered_rot is None:
@@ -123,6 +141,6 @@ class TfFilter():
             self.rate.sleep()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     filter = TfFilter()
     filter.run()
